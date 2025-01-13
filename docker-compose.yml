@@ -1,9 +1,7 @@
 services:
   app:
     build: .
-    container_name: repotify
-    volumes:
-      - .:/var/www/html
+    container_name: reportify
     ports:
       - "8000:8000"
     depends_on:
