@@ -1,6 +1,7 @@
 FROM php:8.3
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
     unzip \
     curl \
     libpng-dev \
@@ -8,7 +9,10 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libonig-dev \
     libzip-dev \
-    && docker-php-ext-install pdo zip gd sockets pcntl posix
+    libpq-dev && \
+    docker-php-ext-configure gd --with-freetype --with-jpeg && \
+    docker-php-ext-install gd pdo zip sockets pcntl posix pdo_pgsql
+
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
