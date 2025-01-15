@@ -8,8 +8,8 @@ use Illuminate\Database\Seeder;
 
 class ElasticSearchSeeder extends Seeder
 {
-    const URL = 'http://localhost:9200/_bulk';
-    const ElasticSearchIndexName = 'elasticsearch';
+    const URL = 'http://elasticsearch:9200/_bulk';
+    const ElasticSearchIndexName = 'reporting';
 
     /**
      * @return void
