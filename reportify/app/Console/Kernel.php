@@ -2,7 +2,7 @@
 
 namespace App\Console;
 
-use App\Jobs\GenerateElasticReportJob;
+use App\Jobs\GenerateDailyElasticReportJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -14,7 +14,8 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
-        Commands\DispatchElasticReportJob::class,
+        Commands\DispatchDailyElasticReportJob::class,
+        Commands\DispatchWeeklyElasticReportJob::class,
     ];
     /**
      * Define the application's command schedule.
@@ -22,7 +23,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // Schedule the SendReportJob to run daily at midnight
-        $schedule->command('report:dispatch')->everyMinute();
+        $schedule->command('report:daily')->daily();
+        $schedule->command('report:weekly')->weekly();
     }
 
     /**

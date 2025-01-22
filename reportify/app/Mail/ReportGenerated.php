@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\Attachment;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -13,12 +14,15 @@ class ReportGenerated extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public array $reportDetails;
+    public string $filePath;
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct($reportDetails, $filePath)
     {
-        //
+        $this->reportDetails = $reportDetails;
+        $this->filePath = $filePath;
     }
 
     /**
@@ -38,6 +42,7 @@ class ReportGenerated extends Mailable
     {
         return new Content(
             view: 'view.name',
+            text:  $this->reportDetails->message,
         );
     }
 
@@ -48,6 +53,8 @@ class ReportGenerated extends Mailable
      */
     public function attachments(): array
     {
-        return [];
+        return [
+            Attachment::fromPath($this->filePath)
+        ];
     }
 }

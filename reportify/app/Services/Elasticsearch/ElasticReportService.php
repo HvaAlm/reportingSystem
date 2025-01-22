@@ -3,12 +3,16 @@
 namespace App\Services\Elasticsearch;
 
 
+use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\ClientBuilder;
+use Elastic\Elasticsearch\Response\Elasticsearch;
+use Http\Promise\Promise;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ElasticReportService
 {
-    protected $client;
+    protected Client|null $client;
 
     public function __construct()
     {
@@ -27,11 +31,8 @@ class ElasticReportService
 
     }
 
-    public function getDailyKeywordHistogram(array $keywords)
+    public function getDailyKeywordHistogram(array $keywords): Elasticsearch|Promise
     {
-        Log::info("Elastic Report Service++++++++++");
-
-        // Use multi_match for all fields with multiple keywords
         $params = [
             'index' => 'reporting_new',
             'body' => [
@@ -44,20 +45,53 @@ class ElasticReportService
                                     'fields' => ['*']
                                 ]
                             ];
-                        }, ['تهران', 'آلودگی']),
+                        }, $keywords),
                         'minimum_should_match' => 1
                     ]
                 ],
-                'aggs' => [],
-                'size' => 5  // Get a few documents to check
+                "aggs" => [
+                    'posts_per_day' => [
+                        'date_histogram' => [
+                            'field' => "published_at",
+                            "format" => "yyyy-MM-dd",
+                            'calendar_interval' => 'day',
+                        ]
+                    ]
+                ],
+                'size' => 0,
             ]
         ];
 
 
-// Execute the query
-        $response = $this->client->search($params);
-        Log::info($response);  // Log the response
+        return $this->client->search($params);
+    }
 
-        return $response['hits']['hits'];
+
+    public function generateCsvFile(string $keywords)
+    {
+        try {
+            $words = explode(',', $keywords);
+            $response = $this->getDailyKeywordHistogram($words);
+            $filePath = 'reports/keyword_histogram_' . now()->format('Y_m_d_H_i_s') . '.csv';
+
+            $fileStream = fopen('php://temp', 'r+');
+            fputcsv($fileStream, ['Date', 'Post Count']);
+            Log::info($response["aggregations"]["posts_per_day"]["buckets"]);
+            if (isset($response['aggregations']['posts_per_day']['buckets'])) {
+                foreach ($response['aggregations']['posts_per_day']['buckets'] as $bucket) {
+                    fputcsv($fileStream, [$bucket['key_as_string'], $bucket['doc_count']]);
+                }
+            } else {
+                fputcsv($fileStream, ['No data available']);
+            }
+
+            rewind($fileStream);
+            Storage::disk('public')->put($filePath, stream_get_contents($fileStream));
+            fclose($fileStream);
+
+            return $filePath;
+        } catch (\Exception $exception) {
+            Log::error($exception->getMessage());
+        }
     }
 }

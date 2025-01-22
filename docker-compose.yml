@@ -11,6 +11,26 @@ services:
       - ./reportify/:/var/www/html
     restart: always
 
+  queue:
+    build: .
+    container_name: queue-worker
+    depends_on:
+      - elasticsearch
+      - postgres
+    command:
+      - 'php artisan queue:work'
+    restart: always
+
+  schedule:
+    build: .
+    container_name: schedule-worker
+    depends_on:
+      - elasticsearch
+      - postgres
+    command:
+      - 'php artisan schedule:work'
+    restart: always
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.17.0
     container_name: elasticsearch
